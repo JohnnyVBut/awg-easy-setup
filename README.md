@@ -6,7 +6,7 @@
 
 ## Quick Installation
 
-**⚠️Tested on Ubuntu 20 only. Has some issuse with Debian (to be fixed)!**
+**⚠️Tested on Ubuntu 20 only. Has some issues with Debian (to be fixed)!**
 
 ### Recommended: One-line install (download → run)
 
