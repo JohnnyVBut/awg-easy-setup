@@ -9,13 +9,13 @@
 **⚠️ Run only on a fresh server!**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/YOUR_USERNAME/awg-easy-setup/main/setup.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/setup.sh | sudo bash
 ```
 
 Or with wget:
 
 ```bash
-wget -qO- https://raw.githubusercontent.com/YOUR_USERNAME/awg-easy-setup/main/setup.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/setup.sh | sudo bash
 ```
 
 ## What Does This Script Do?
