@@ -8,14 +8,32 @@
 
 **⚠️ Run only on a fresh server!**
 
+### Recommended: One-line install (download → run)
+
 ```bash
-curl -fsSL https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/setup.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/setup.sh -o /tmp/awg-setup.sh && sudo bash /tmp/awg-setup.sh
 ```
 
-Or with wget:
+**Or with wget:**
 
 ```bash
-wget -qO- https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/setup.sh | sudo bash
+wget -qO /tmp/awg-setup.sh https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/setup.sh && sudo bash /tmp/awg-setup.sh
+```
+
+### Alternative: Manual verification
+
+```bash
+# Download the script
+curl -fsSL https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/setup.sh -o /tmp/awg-setup.sh
+
+# Verify syntax
+bash -n /tmp/awg-setup.sh
+
+# Review content (optional)
+less /tmp/awg-setup.sh
+
+# Run installation
+sudo bash /tmp/awg-setup.sh
 ```
 
 ## What Does This Script Do?
@@ -160,28 +178,14 @@ Internet
 
 ### From Specific Release
 ```bash
-curl -fsSL https://github.com/YOUR_USERNAME/awg-easy-setup/releases/download/v1.0.0/setup.sh | sudo bash
-```
-
-### Download and Inspect First
-```bash
-curl -fsSL -o setup.sh https://raw.githubusercontent.com/YOUR_USERNAME/awg-easy-setup/main/setup.sh
-less setup.sh  # Review the script
-sudo bash setup.sh
+curl -fsSL https://github.com/JohnnyVBut/awg-easy-setup/releases/download/v1.0.0/setup.sh -o /tmp/awg-setup.sh && sudo bash /tmp/awg-setup.sh
 ```
 
 ### Clone Repository
 ```bash
-git clone https://github.com/YOUR_USERNAME/awg-easy-setup.git
+git clone https://github.com/JohnnyVBut/awg-easy-setup.git
 cd awg-easy-setup
 sudo bash setup.sh
-```
-
-### With Custom Parameters
-```bash
-# Modify setup.sh to read environment variables first, then:
-SSH_PORT=2222 WG_PORT=51820 DEFAULT_USER=myuser \
-  curl -fsSL https://raw.githubusercontent.com/YOUR_USERNAME/awg-easy-setup/main/setup.sh | sudo -E bash
 ```
 
 ## Threat Model
@@ -213,8 +217,8 @@ MIT License - see [LICENSE](LICENSE)
 
 ## Support
 
-- 🐛 [Report Issues](https://github.com/YOUR_USERNAME/awg-easy-setup/issues)
-- 💬 [Discussions](https://github.com/YOUR_USERNAME/awg-easy-setup/discussions)
+- 🐛 [Report Issues](https://github.com/JohnnyVBut/awg-easy-setup/issues)
+- 💬 [Discussions](https://github.com/JohnnyVBut/awg-easy-setup/discussions)
 
 ## Acknowledgments
 
