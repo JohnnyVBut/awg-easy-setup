@@ -6,7 +6,7 @@
 
 ## Quick Installation
 
-**⚠️ Run only on a fresh server!**
+**⚠️Tested on Ubuntu 20 only. Has some issuse with Debian (to be fixed)!**
 
 ### Recommended: One-line install (download → run)
 
