@@ -4,8 +4,32 @@
 
 ## Быстрый старт
 
+### Рекомендуется: Установка одной командой
+
 ```bash
-curl -fsSL https://raw.githubusercontent.com/YOUR_USERNAME/awg-easy-setup/main/setup.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/setup.sh -o /tmp/awg-setup.sh && sudo bash /tmp/awg-setup.sh
+```
+
+**Или с wget:**
+
+```bash
+wget -qO /tmp/awg-setup.sh https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/setup.sh && sudo bash /tmp/awg-setup.sh
+```
+
+### Альтернатива: Ручная проверка
+
+```bash
+# Скачать скрипт
+curl -fsSL https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/setup.sh -o /tmp/awg-setup.sh
+
+# Проверить синтаксис
+bash -n /tmp/awg-setup.sh
+
+# Просмотреть содержимое (опционально)
+less /tmp/awg-setup.sh
+
+# Запустить установку
+sudo bash /tmp/awg-setup.sh
 ```
 
 ## Требования
@@ -63,6 +87,49 @@ curl --max-time 5 http://YOUR_SERVER_IP:8888
 # Подключитесь к VPN, затем тест (должно работать)
 curl http://10.8.0.1:8888
 ```
+
+## Объяснение методов установки
+
+### Метод 1: Установка одной командой (рекомендуется)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/setup.sh -o /tmp/awg-setup.sh && sudo bash /tmp/awg-setup.sh
+```
+
+**Почему этот метод:**
+- ✅ Одна команда copy-paste
+- ✅ Надежное выполнение (из файла, избегает проблем парсинга shell)
+- ✅ Скрипт полностью скачивается перед выполнением
+- ✅ Работает одинаково на всех системах
+
+**Как это работает:**
+1. Скачивает скрипт в `/tmp/awg-setup.sh`
+2. Запускается только если скачивание успешно (оператор `&&`)
+3. Выполняется из файловой системы (не через pipe)
+
+### Метод 2: Клонирование репозитория
+
+```bash
+git clone https://github.com/JohnnyVBut/awg-easy-setup.git
+cd awg-easy-setup
+sudo bash setup.sh
+```
+
+**Когда использовать:**
+- Нужен полный доступ к репозиторию
+- Требуется изменить скрипты
+- Создание кастомного развертывания
+
+### Метод 3: Конкретный релиз
+
+```bash
+curl -fsSL https://github.com/JohnnyVBut/awg-easy-setup/releases/download/v1.0.0/setup.sh -o /tmp/awg-setup.sh && sudo bash /tmp/awg-setup.sh
+```
+
+**Когда использовать:**
+- Production развертывания
+- Нужны воспроизводимые установки
+- Привязка к проверенной версии
 
 ## Следующие шаги
 
