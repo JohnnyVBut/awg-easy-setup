@@ -54,8 +54,9 @@ systemctl enable --now ssh
 
 # ========= 3) Create sudo user (10s prompt) =========
 echo "[3/11] Creating a sudo user (you have 10 seconds to type a name)..."
+NEWUSER=""
 read -r -t 10 -p "Enter new username (10s timeout): " NEWUSER || true
-if [[ -z "${NEWUSER:-}" ]]; then
+if [[ -z "${NEWUSER}" ]]; then
   NEWUSER="$DEFAULT_USER"
   echo "No input. Will create user: $NEWUSER"
 fi
@@ -107,7 +108,10 @@ echo "root:${ROOT_PASS}" | chpasswd
 
 # ========= 6) Harden SSH: public-key only, no passwords, no root, custom port =========
 echo "[6/11] Hardening SSH (port ${SSH_PORT}, disable passwords, root login off)..."
-backup="${SSHD_CONFIG}.bak"; [[ -f "$backup" ]] || cp "$SSHD_CONFIG" "$backup"
+backup="${SSHD_CONFIG}.bak"
+if [[ ! -f "$backup" ]]; then
+  cp "$SSHD_CONFIG" "$backup"
+fi
 
 apply_sshd_conf() {
   local k="$1" v="$2"
@@ -152,7 +156,7 @@ ufw reload || true
 # ========= 8) Run awg-easy (publish UI) & TEMPORARILY open UI via UFW =========
 echo "[8/11] Running awg-easy container (publishing UI ${AWG_PORT}/tcp)..."
 AWG_PASS="$(openssl rand -base64 24 | tr -d '\n')"
-PASSWORD_HASH="$(htpasswd -nbB admin "$AWG_PASS" | cut -d: -f2)"  # bcrypt (cost=5)
+PASSWORD_HASH="$(htpasswd -nbB admin "$AWG_PASS" | cut -d: -f2)"
 
 WG_HOST="$(curl -fsS https://api.ipify.org || true)"
 [[ -z "$WG_HOST" ]] && WG_HOST="$(dig +short myip.opendns.com @resolver1.opendns.com || true)"
@@ -185,7 +189,6 @@ docker run -d \
   --restart unless-stopped \
   "$IMAGE_REF"
 
-# TEMPORARILY open UI via UFW (note: Docker may bypass UFW; we'll enforce DOCKER-USER later)
 ufw allow "${AWG_PORT}/tcp" || true
 ufw reload || true
 
@@ -203,19 +206,15 @@ read -r -p "When DONE creating a VPN client, press ENTER to lock the Web UI to V
 # ========= 9) LOCK Web UI to VPN-only: UFW + DOCKER-USER chain =========
 echo "[9/11] Locking the Web UI to VPN-only (${VPN_SUBNET})..."
 
-# UFW: allow from VPN subnet, deny everyone else
 ufw delete allow "${AWG_PORT}/tcp" >/dev/null 2>&1 || true
 ufw allow from "${VPN_SUBNET}" to any port "${AWG_PORT}" proto tcp || true
 ufw deny  "${AWG_PORT}/tcp" || true
 ufw reload || true
 
-# Enforce with iptables DOCKER-USER (Docker can bypass UFW otherwise)
 apply_docker_user_lock() {
   local port="$1" subnet="$2"
-  # Ensure chain exists
   iptables -N DOCKER-USER 2>/dev/null || true
 
-  # Remove existing rules for this port to avoid duplicates
   while iptables -C DOCKER-USER -p tcp --dport "$port" -j DROP 2>/dev/null; do
     iptables -D DOCKER-USER -p tcp --dport "$port" -j DROP
   done
@@ -223,28 +222,24 @@ apply_docker_user_lock() {
     iptables -D DOCKER-USER -p tcp --dport "$port" -s "$subnet" -j ACCEPT
   done
 
-  # Add allow-then-drop (order matters)
   iptables -I DOCKER-USER -p tcp --dport "$port" -s "$subnet" -j ACCEPT
   iptables -A DOCKER-USER -p tcp --dport "$port" -j DROP
 }
 
 apply_docker_user_lock "${AWG_PORT}" "${VPN_SUBNET}"
 
-# Install a persistent boot-time enforcer (systemd unit)
 cat >/usr/local/sbin/lock-awg-ui.sh <<EOF
 #!/bin/bash
 set -e
 PORT=${AWG_PORT}
 SUBNET="${VPN_SUBNET}"
 iptables -N DOCKER-USER 2>/dev/null || true
-# Clean old rules for the port
 while iptables -C DOCKER-USER -p tcp --dport "\$PORT" -j DROP 2>/dev/null; do
   iptables -D DOCKER-USER -p tcp --dport "\$PORT" -j DROP
 done
 while iptables -C DOCKER-USER -p tcp --dport "\$PORT" -s "\$SUBNET" -j ACCEPT 2>/dev/null; do
   iptables -D DOCKER-USER -p tcp --dport "\$PORT" -s "\$SUBNET" -j ACCEPT
 done
-# Allow VPN subnet, drop others
 iptables -I DOCKER-USER -p tcp --dport "\$PORT" -s "\$SUBNET" -j ACCEPT
 iptables -A DOCKER-USER -p tcp --dport "\$PORT" -j DROP
 EOF
