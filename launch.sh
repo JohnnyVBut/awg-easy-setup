@@ -167,16 +167,6 @@ if docker ps -a --format '{{.Names}}' | grep -qx "$CONTAINER_NAME"; then
   docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
 fi
 
-echo "DEBUG: Docker run parameters:"
-echo "  CONTAINER_NAME=$CONTAINER_NAME"
-echo "  WG_HOST=$WG_HOST"
-echo "  PASSWORD_HASH=$PASSWORD_HASH"
-echo "  AWG_PORT=$AWG_PORT"
-echo "  WG_PORT=$WG_PORT"
-echo "  HOST_CONF_DIR=$HOST_CONF_DIR"
-echo "  IMAGE_REF=$IMAGE_REF"
-echo ""
-
 docker run -d \
   --name="$CONTAINER_NAME" \
   -e LANG=en \
