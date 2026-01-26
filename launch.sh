@@ -160,7 +160,8 @@ WG_HOST="$(curl -fsS https://api.ipify.org || true)"
 [[ -z "$WG_HOST" ]] && WG_HOST="0.0.0.0"
 
 HOST_CONF_DIR="$HOME_DIR/.awg-easy"
-install -d -m 700 -o "$NEWUSER" -g "$NEWUSER" "$HOST_CONF_DIR"
+install -d -m 755 "$HOST_CONF_DIR"
+chown root:root "$HOST_CONF_DIR"
 
 if docker ps -a --format '{{.Names}}' | grep -qx "$CONTAINER_NAME"; then
   docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
@@ -184,6 +185,23 @@ docker run -d \
   -e PORT="$AWG_PORT" \
   -e WG_PORT="$WG_PORT" \
   -e WG_DEFAULT_DNS=1.1.1.1,8.8.8.8 \
+  -e JC=6 \
+  -e JMIN=10 \
+  -e JMAX=50 \
+  -e S1=64 \
+  -e S2=67 \
+  -e S3=17 \
+  -e S4=4 \
+  -e H1=221138202-537563446 \
+  -e H2=1824677785-1918284606 \
+  -e H3=2058490965-2098228430 \
+  -e H4=2114920036-2134209753 \
+  -e I1='<b 0x084481800001000300000000077469636b65747306776964676574096b696e6f706f69736b0272750000010001c00c0005000100000039001806776964676574077469636b6574730679616e646578c025c0390005000100000039002b1765787465726e616c2d7469636b6574732d776964676574066166697368610679616e646578036e657400c05d000100010000001c000457fafe25>' \
+  -e I2= \
+  -e I3= \
+  -e I4= \
+  -e I5= \
+  -e ITIME=0 \
   -v "$HOST_CONF_DIR:/etc/wireguard" \
   -v "$HOST_CONF_DIR:/etc/amnezia/amneziawg" \
   -p "${WG_PORT}:${WG_PORT}/udp" \
