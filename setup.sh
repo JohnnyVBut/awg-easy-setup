@@ -9,7 +9,7 @@ WG_PORT=54321                 # WireGuard UDP port (exposed)
 AWG_PORT=8888                 # awg-easy Web UI port
 VPN_SUBNET="10.8.0.0/24"      # Web UI allowed only from this subnet after bootstrap
 CONTAINER_NAME="awg-easy"
-IMAGE_REF="ghcr.io/gennadykataev/awg-easy"
+IMAGE_REF="ghcr.io/johnnyvbut/awg-easy:latest"
 
 # ========= Preconditions =========
 if [[ "$(id -u)" -ne 0 ]]; then
@@ -166,6 +166,16 @@ if docker ps -a --format '{{.Names}}' | grep -qx "$CONTAINER_NAME"; then
   docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
 fi
 
+echo "DEBUG: Docker run parameters:"
+echo "  CONTAINER_NAME=$CONTAINER_NAME"
+echo "  WG_HOST=$WG_HOST"
+echo "  PASSWORD_HASH=$PASSWORD_HASH"
+echo "  AWG_PORT=$AWG_PORT"
+echo "  WG_PORT=$WG_PORT"
+echo "  HOST_CONF_DIR=$HOST_CONF_DIR"
+echo "  IMAGE_REF=$IMAGE_REF"
+echo ""
+
 docker run -d \
   --name="$CONTAINER_NAME" \
   -e LANG=en \
@@ -173,6 +183,7 @@ docker run -d \
   -e PASSWORD_HASH="$PASSWORD_HASH" \
   -e PORT="$AWG_PORT" \
   -e WG_PORT="$WG_PORT" \
+  -e WG_DEFAULT_DNS=1.1.1.1,8.8.8.8 \
   -v "$HOST_CONF_DIR:/etc/wireguard" \
   -v "$HOST_CONF_DIR:/etc/amnezia/amneziawg" \
   -p "${WG_PORT}:${WG_PORT}/udp" \
@@ -184,6 +195,25 @@ docker run -d \
   --sysctl="net.ipv4.ip_forward=1" \
   --restart unless-stopped \
   "$IMAGE_REF"
+
+# Wait for container to start and stabilize
+echo "[8/11] Waiting for container to start..."
+sleep 5
+
+# Check if container is running
+if ! docker ps | grep -q "$CONTAINER_NAME"; then
+  echo "ERROR: Container failed to start. Checking logs..."
+  docker logs "$CONTAINER_NAME"
+  echo
+  echo "Please check if AmneziaWG kernel module is installed:"
+  echo "  lsmod | grep amneziawg"
+  echo
+  echo "If not installed, run:"
+  echo "  apt install -y linux-headers-\$(uname -r) build-essential git"
+  echo "  cd /tmp && git clone https://github.com/amnezia-vpn/amneziawg-linux-kernel-module.git"
+  echo "  cd amneziawg-linux-kernel-module/src && make && make install && modprobe amneziawg"
+  exit 1
+fi
 
 # TEMPORARILY open UI via UFW (note: Docker may bypass UFW; we'll enforce DOCKER-USER later)
 ufw allow "${AWG_PORT}/tcp" || true
