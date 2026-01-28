@@ -376,7 +376,7 @@ else
           echo "Download config (ONE-TIME LINK - expires after download):"
           echo "  $DOWNLOAD_URL"
           echo ""
-          echo "QR Code (scan with WireGuard mobile app):"
+          echo "QR Code (scan with AmneziaWG mobile app. Install/update app to get AWG2.0 support±):"
           display_qr_code "$CLIENT_ID"
           echo ""
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
