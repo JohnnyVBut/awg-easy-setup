@@ -7,7 +7,7 @@ SSHD_CONFIG="/etc/ssh/sshd_config"
 DEFAULT_USER="admino"
 WG_PORT=54321                 # WireGuard UDP port (exposed)
 AWG_PORT=8888                 # awg-easy Web UI port
-VPN_SUBNET="10.8.0.0/24"      # Web UI allowed only from this subnet after bootstrap
+VPN_SUBNET="10.8.8.0/24"      # Web UI allowed only from this subnet after bootstrap
 CONTAINER_NAME="awg-easy"
 IMAGE_REF="ghcr.io/johnnyvbut/awg-easy:latest"
 
@@ -26,24 +26,43 @@ apt -y upgrade
 
 # ========= 2) Install Docker (official repo), OpenSSH, UFW, tools =========
 echo "[2/12] Installing Docker (official repo), OpenSSH, UFW, and tools..."
-apt install -y ca-certificates curl gnupg lsb-release software-properties-common apt-transport-https
+apt install -y ca-certificates curl gnupg lsb-release apt-transport-https
+
+# software-properties-common may not exist on Debian
+apt install -y software-properties-common 2>/dev/null || true
+
 apt remove -y docker docker-engine docker.io containerd runc || true
 
 install -m 0755 -d /etc/apt/keyrings
+
+# Detect OS type (Ubuntu or Debian)
+if [[ -r /etc/os-release ]]; then
+  . /etc/os-release
+  OS_ID="${ID}"
+  OS_CODENAME="${VERSION_CODENAME:-$(lsb_release -cs)}"
+else
+  OS_ID="$(lsb_release -is | tr '[:upper:]' '[:lower:]')"
+  OS_CODENAME="$(lsb_release -cs)"
+fi
+
+# Download appropriate GPG key if not exists
 if [[ ! -f /etc/apt/keyrings/docker.gpg ]]; then
-  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  if [[ "$OS_ID" == "debian" ]]; then
+    curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  else
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  fi
 fi
 chmod a+r /etc/apt/keyrings/docker.gpg
 
-if [[ -r /etc/os-release ]]; then
-  . /etc/os-release
-  UBUNTU_CODENAME="${VERSION_CODENAME:-$(lsb_release -cs)}"
+# Always recreate repository file with correct OS
+if [[ "$OS_ID" == "debian" ]]; then
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian ${OS_CODENAME} stable" \
+    | tee /etc/apt/sources.list.d/docker.list >/dev/null
 else
-  UBUNTU_CODENAME="$(lsb_release -cs)"
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu ${OS_CODENAME} stable" \
+    | tee /etc/apt/sources.list.d/docker.list >/dev/null
 fi
-
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu ${UBUNTU_CODENAME} stable" \
-  | tee /etc/apt/sources.list.d/docker.list >/dev/null
 
 apt update
 apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
@@ -52,6 +71,12 @@ apt install -y openssh-server ufw python3 python3-pip git jq vim htop unzip zip 
 # Install QR code dependencies
 echo "[2/12] Installing QR code tools..."
 apt install -y librsvg2-bin zbar-tools qrencode
+
+# Install sudo if not present (Debian)
+if ! command -v sudo >/dev/null 2>&1; then
+  echo "[2/12] Installing sudo (not present on clean Debian)..."
+  apt install -y sudo
+fi
 
 # Enable services
 systemctl enable docker.socket
@@ -113,8 +138,24 @@ else
   USER_PASS="$(openssl rand -base64 24 | tr -d '\n')"
   useradd -m -s /bin/bash "$NEWUSER"
   echo "${NEWUSER}:${USER_PASS}" | chpasswd
-  usermod -aG sudo,docker "$NEWUSER"
-  echo "User $NEWUSER created and added to groups: sudo,docker."
+
+  # Determine correct sudo group (Debian uses 'sudo', some systems use 'wheel')
+  if getent group sudo >/dev/null; then
+    SUDO_GROUP="sudo"
+  elif getent group wheel >/dev/null; then
+    SUDO_GROUP="wheel"
+  else
+    echo "WARNING: No sudo/wheel group found. User will not have sudo access."
+    SUDO_GROUP=""
+  fi
+
+  if [[ -n "$SUDO_GROUP" ]]; then
+    usermod -aG "$SUDO_GROUP,docker" "$NEWUSER"
+    echo "User $NEWUSER created and added to groups: $SUDO_GROUP,docker."
+  else
+    usermod -aG docker "$NEWUSER"
+    echo "User $NEWUSER created and added to group: docker."
+  fi
 fi
 
 HOME_DIR="$(eval echo "~$NEWUSER")"
@@ -373,10 +414,10 @@ else
           echo "✓ FIRST VPN CLIENT CREATED!"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo ""
-          echo "Download config (ONE-TIME LINK - expires after download):"
+          echo "Download config file for desktop PC (ONE-TIME LINK - expires after download):"
           echo "  $DOWNLOAD_URL"
           echo ""
-          echo "QR Code (scan with WireGuard mobile app):"
+          echo "Or scan QR Code  with AmneziaWG mobile app:"
           display_qr_code "$CLIENT_ID"
           echo ""
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
