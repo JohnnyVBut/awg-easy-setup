@@ -6,25 +6,25 @@
 
 ## Quick Installation
 
-**⚠️Tested on Ubuntu 22, 24 only. Has some issues with Debian (to be fixed)!**
+**⚠️ Run only on a fresh server!**
 
 ### Recommended: One-line install (download → run)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/launch.sh -o /tmp/awg-setup.sh && sudo bash /tmp/awg-setup.sh
+curl -fsSL https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/setup.sh -o /tmp/awg-setup.sh && sudo bash /tmp/awg-setup.sh
 ```
 
 **Or with wget:**
 
 ```bash
-wget -qO /tmp/awg-setup.sh https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/launch.sh && sudo bash /tmp/awg-setup.sh
+wget -qO /tmp/awg-setup.sh https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/setup.sh && sudo bash /tmp/awg-setup.sh
 ```
 
 ### Alternative: Manual verification
 
 ```bash
 # Download the script
-curl -fsSL https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/run.sh -o /tmp/awg-setup.sh
+curl -fsSL https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/setup.sh -o /tmp/awg-setup.sh
 
 # Verify syntax
 bash -n /tmp/awg-setup.sh
@@ -42,6 +42,8 @@ sudo bash /tmp/awg-setup.sh
 ✅ Creates a hardened sudo user  
 ✅ Configures SSH (keys-only, non-standard port, root disabled)  
 ✅ Deploys AmneziaWG VPN container  
+✅ **Automatically creates first VPN client via API**  
+✅ **Displays QR code and one-time download link in terminal**  
 ✅ **Automatically locks web UI after initial setup**  
 
 ## Security Features
@@ -54,38 +56,67 @@ sudo bash /tmp/awg-setup.sh
 
 ## System Requirements
 
-- Ubuntu 20.04+ or Debian 11+
+- Ubuntu 20.04+ or Debian 11+ (tested on Ubuntu 22.04 and 24.04)
 - Minimum 1GB RAM
 - Root access
 - Fresh installation (recommended)
+- Internet connection for package installation
 
 ## Installation Process
 
 ### Step 1: Username Prompt (10 seconds)
 ```
-[3/11] Creating a sudo user (you have 10 seconds to type a name)...
+[3/12] Creating a sudo user (you have 10 seconds to type a name)...
 Enter new username (10s timeout): _
 ```
 Type a username or wait for timeout → defaults to `admino`
 
-### Step 2: Create VPN Client (CRITICAL)
+### Step 2: Automated VPN Client Creation (NEW!)
+```
+[9/12] Creating first VPN client via API...
+→ Authenticating...
+✓ Authenticated successfully
+→ Creating VPN client...
+✓ Client created successfully
+✓ Client ID: 4acaf6ff-8d16-4edf-96ef-560f5885be53
+→ Generating one-time download link...
+✓ One-time link generated
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✓ FIRST VPN CLIENT CREATED!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Download config (ONE-TIME LINK - expires after download):
+  http://YOUR_IP:8888/cnf/abc123def456...
+
+QR Code (scan with WireGuard mobile app):
+█████████████████████████████████
+███ ▄▄▄▄▄ █▀█ █▄▄▀▄█ ▄▄▄▄▄ ███
+███ █   █ █▀▀▀ ▀ ▄ █ █   █ ███
+...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**Actions:**
+1. **Scan the QR code** with WireGuard mobile app, OR
+2. **Click the one-time link** to download config file
+3. **⚠️ Save the link immediately** - it expires after first download!
+
+### Step 3: Web UI Access (Optional)
 ```
 >>> TEMPORARY Web UI access is OPEN to the Internet.
-    Please open this URL NOW and create at least one VPN client:
+    You can also access Web UI at:
     URL:  http://YOUR_IP:8888
     User: admin
     Pass: [SHOWN IN OUTPUT]
 
-When DONE creating a VPN client, press ENTER to lock the Web UI to VPN-only...
+Press ENTER to lock the Web UI to VPN-only access...
 ```
 
-**Actions:**
-1. Open the URL in your browser
-2. Login with displayed credentials
-3. Create at least 1 client (scan QR or download config)
-4. Return to terminal and press ENTER
+**Optional:** You can create additional clients via Web UI before locking it.
 
-### Step 3: Save Credentials
+### Step 4: Save Credentials
 ```
 ==================== SUMMARY ====================
  User:                    admino

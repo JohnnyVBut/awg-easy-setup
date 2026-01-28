@@ -6,26 +6,25 @@
 
 ## Быстрая установка
 
-**⚠️ Протестировано на Ubuntu 22, 24. В Debian имеются неотрорые проблемы с закрытием веб интерфейса из интернет.
-(пофиксим позже) Запускать на чистой машине под рутом**
+**⚠️ Выполняйте только на чистом сервере!**
 
 ### Рекомендуется: Установка одной командой (скачивание → запуск)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/launch.sh -o /tmp/awg-setup.sh && sudo bash /tmp/awg-setup.sh
+curl -fsSL https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/setup.sh -o /tmp/awg-setup.sh && sudo bash /tmp/awg-setup.sh
 ```
 
 **Или с wget:**
 
 ```bash
-wget -qO /tmp/awg-setup.sh https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/launch.sh && sudo bash /tmp/awg-setup.sh
+wget -qO /tmp/awg-setup.sh https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/setup.sh && sudo bash /tmp/awg-setup.sh
 ```
 
 ### Альтернатива: Ручная проверка
 
 ```bash
 # Скачать скрипт
-curl -fsSL https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/run.sh -o /tmp/awg-setup.sh
+curl -fsSL https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/setup.sh -o /tmp/awg-setup.sh
 
 # Проверить синтаксис
 bash -n /tmp/awg-setup.sh
@@ -43,6 +42,8 @@ sudo bash /tmp/awg-setup.sh
 ✅ Создает защищенного sudo-пользователя  
 ✅ Настраивает SSH (только ключи, нестандартный порт)  
 ✅ Разворачивает AmneziaWG VPN контейнер  
+✅ **Автоматически создает первого VPN клиента через API**  
+✅ **Показывает QR код и одноразовую ссылку в терминале**  
 ✅ **Автоматически блокирует веб-интерфейс после настройки**  
 
 ## Безопасность
@@ -54,38 +55,67 @@ sudo bash /tmp/awg-setup.sh
 
 ## Системные требования
 
-- Ubuntu 20.04+ или Debian 11+
+- Ubuntu 20.04+ или Debian 11+ (протестировано на Ubuntu 22.04 и 24.04)
 - Минимум 1GB RAM
 - Root доступ
 - Чистая установка (рекомендуется)
+- Интернет соединение для установки пакетов
 
 ## Процесс установки
 
 ### Шаг 1: Запрос имени пользователя (10 секунд)
 ```
-[3/11] Creating a sudo user (you have 10 seconds to type a name)...
+[3/12] Creating a sudo user (you have 10 seconds to type a name)...
 Enter new username (10s timeout): _
 ```
 Введите имя или подождите таймаут → по умолчанию `admino`
 
-### Шаг 2: Создание VPN клиента (КРИТИЧНО)
+### Шаг 2: Автоматическое создание VPN клиента (НОВОЕ!)
+```
+[9/12] Creating first VPN client via API...
+→ Authenticating...
+✓ Authenticated successfully
+→ Creating VPN client...
+✓ Client created successfully
+✓ Client ID: 4acaf6ff-8d16-4edf-96ef-560f5885be53
+→ Generating one-time download link...
+✓ One-time link generated
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✓ ПЕРВЫЙ VPN КЛИЕНТ СОЗДАН!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Скачать конфиг (ОДНОРАЗОВАЯ ССЫЛКА - исчезает после скачивания):
+  http://YOUR_IP:8888/cnf/abc123def456...
+
+QR Code (отсканируйте в мобильном приложении WireGuard):
+█████████████████████████████████
+███ ▄▄▄▄▄ █▀█ █▄▄▀▄█ ▄▄▄▄▄ ███
+███ █   █ █▀▀▀ ▀ ▄ █ █   █ ███
+...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**Действия:**
+1. **Отсканируйте QR код** в мобильном приложении WireGuard, ИЛИ
+2. **Перейдите по одноразовой ссылке** чтобы скачать конфиг
+3. **⚠️ Сохраните ссылку сразу** - она исчезнет после первого скачивания!
+
+### Шаг 3: Доступ к веб-интерфейсу (опционально)
 ```
 >>> TEMPORARY Web UI access is OPEN to the Internet.
-    Please open this URL NOW and create at least one VPN client:
+    You can also access Web UI at:
     URL:  http://YOUR_IP:8888
     User: admin
     Pass: [ПОКАЗАН В ВЫВОДЕ]
 
-When DONE creating a VPN client, press ENTER to lock the Web UI to VPN-only...
+Press ENTER to lock the Web UI to VPN-only access...
 ```
 
-**Действия:**
-1. Откройте URL в браузере
-2. Войдите с показанными учетными данными
-3. Создайте минимум 1 клиента (QR код или файл конфигурации)
-4. Вернитесь в терминал и нажмите ENTER
+**Опционально:** Вы можете создать дополнительных клиентов через веб-интерфейс перед его блокировкой.
 
-### Шаг 3: Сохранение учетных данных
+### Шаг 4: Сохранение учетных данных
 ```
 ==================== SUMMARY ====================
  User:                    admino
