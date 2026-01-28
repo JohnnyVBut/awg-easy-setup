@@ -218,7 +218,7 @@ fi
 
 docker run -d \
   --name="$CONTAINER_NAME" \
-  -e LANG=en \
+  -e LANG=ru \
   -e WG_HOST="$WG_HOST" \
   -e PASSWORD_HASH="$PASSWORD_HASH" \
   -e WG_ENABLE_ONE_TIME_LINKS=true \
