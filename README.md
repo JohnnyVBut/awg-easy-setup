@@ -11,7 +11,7 @@
 ### Recommended: One-line install (download → run)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/setup.sh -o /tmp/awg-setup.sh && sudo bash /tmp/awg-setup.sh
+curl -fsSL https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/launch.sh -o /tmp/awg-setup.sh && sudo bash /tmp/awg-setup.sh
 ```
 
 **Or with wget:**
@@ -24,7 +24,7 @@ wget -qO /tmp/awg-setup.sh https://raw.githubusercontent.com/JohnnyVBut/awg-easy
 
 ```bash
 # Download the script
-curl -fsSL https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/setup.sh -o /tmp/awg-setup.sh
+curl -fsSL https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/launch.sh -o /tmp/awg-setup.sh
 
 # Verify syntax
 bash -n /tmp/awg-setup.sh
