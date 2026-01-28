@@ -24,7 +24,7 @@ wget -qO /tmp/awg-setup.sh https://raw.githubusercontent.com/JohnnyVBut/awg-easy
 
 ```bash
 # Скачать скрипт
-curl -fsSL https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/setup.sh -o /tmp/awg-setup.sh
+curl -fsSL https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/launch.sh -o /tmp/awg-setup.sh
 
 # Проверить синтаксис
 bash -n /tmp/awg-setup.sh

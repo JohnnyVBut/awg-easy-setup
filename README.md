@@ -17,7 +17,7 @@ curl -fsSL https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/laun
 **Or with wget:**
 
 ```bash
-wget -qO /tmp/awg-setup.sh https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/setup.sh && sudo bash /tmp/awg-setup.sh
+wget -qO /tmp/awg-setup.sh https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/launch.sh && sudo bash /tmp/awg-setup.sh
 ```
 
 ### Alternative: Manual verification
