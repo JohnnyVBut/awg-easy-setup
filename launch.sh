@@ -49,7 +49,34 @@ apt update
 apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 apt install -y openssh-server ufw python3 python3-pip git jq vim htop unzip zip apache2-utils dnsutils
 
-systemctl enable --now docker
+# Fix for Ubuntu 24: Enable docker.socket first
+systemctl enable docker.socket
+systemctl start docker.socket
+systemctl enable docker
+systemctl start docker
+
+# Check if Docker started successfully
+sleep 2
+if ! systemctl is-active --quiet docker; then
+  echo "ERROR: Docker failed to start. Checking logs..."
+  systemctl status docker
+  journalctl -xeu docker.service --no-pager -n 50
+  echo ""
+  echo "Attempting to fix..."
+
+  # Restart socket and service
+  systemctl restart docker.socket
+  systemctl restart docker
+  sleep 3
+
+  if ! systemctl is-active --quiet docker; then
+    echo "ERROR: Docker still not running. Manual intervention required."
+    echo "Please run: systemctl restart docker.socket && systemctl restart docker"
+    exit 1
+  fi
+fi
+
+echo "Docker is running successfully"
 systemctl enable --now ssh
 
 # ========= 3) Create sudo user (10s prompt) =========
