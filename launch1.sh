@@ -19,13 +19,13 @@ fi
 command -v apt >/dev/null || { echo "This script expects apt (Ubuntu/Debian)."; exit 1; }
 
 # ========= 1) Update & upgrade =========
-echo "[1/11] Updating packages..."
+echo "[1/12] Updating packages..."
 export DEBIAN_FRONTEND=noninteractive
 apt update
 apt -y upgrade
 
 # ========= 2) Install Docker (official repo), OpenSSH, UFW, tools =========
-echo "[2/11] Installing Docker (official repo), OpenSSH, UFW, and tools..."
+echo "[2/12] Installing Docker (official repo), OpenSSH, UFW, and tools..."
 apt install -y ca-certificates curl gnupg lsb-release software-properties-common apt-transport-https
 apt remove -y docker docker-engine docker.io containerd runc || true
 
@@ -49,13 +49,17 @@ apt update
 apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 apt install -y openssh-server ufw python3 python3-pip git jq vim htop unzip zip apache2-utils dnsutils
 
+# Install QR code dependencies
+echo "[2/12] Installing QR code tools..."
+apt install -y librsvg2-bin zbar-tools qrencode
+
 # Enable services
 systemctl enable docker.socket
 systemctl enable docker
 systemctl enable ssh
 
 # Start Docker with retry logic (Ubuntu 24 needs this)
-echo "[2/11] Starting Docker daemon..."
+echo "[2/12] Starting Docker daemon..."
 MAX_ATTEMPTS=3
 ATTEMPT=0
 
@@ -87,14 +91,14 @@ if ! systemctl is-active --quiet docker; then
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   journalctl -xeu docker.service --no-pager -n 15
   echo ""
-  echo "Will retry before running container in section 8..."
+  echo "Will retry before running container in section 9..."
   echo ""
 fi
 
 systemctl start ssh
 
 # ========= 3) Create sudo user (10s prompt) =========
-echo "[3/11] Creating a sudo user (you have 10 seconds to type a name)..."
+echo "[3/12] Creating a sudo user (you have 10 seconds to type a name)..."
 read -r -t 10 -p "Enter new username (10s timeout): " NEWUSER || true
 if [[ -z "${NEWUSER:-}" ]]; then
   NEWUSER="$DEFAULT_USER"
@@ -116,7 +120,7 @@ fi
 HOME_DIR="$(eval echo "~$NEWUSER")"
 
 # ========= 4) SSH keys for new user + import root's authorized_keys =========
-echo "[4/11] Generating SSH keys and importing /root/.ssh/authorized_keys..."
+echo "[4/12] Generating SSH keys and importing /root/.ssh/authorized_keys..."
 install -d -m 700 -o "$NEWUSER" -g "$NEWUSER" "$HOME_DIR/.ssh"
 if [[ ! -f "$HOME_DIR/.ssh/id_ed25519" ]]; then
   sudo -u "$NEWUSER" ssh-keygen -t ed25519 -N "" -f "$HOME_DIR/.ssh/id_ed25519" >/dev/null
@@ -142,12 +146,12 @@ if [[ -f "$ROOT_KEYS_SRC" ]]; then
 fi
 
 # ========= 5) Random password for root (SSH root login stays disabled) =========
-echo "[5/11] Setting a random password for root (SSH login for root stays disabled)..."
+echo "[5/12] Setting a random password for root (SSH login for root stays disabled)..."
 ROOT_PASS="$(openssl rand -base64 24 | tr -d '\n')"
 echo "root:${ROOT_PASS}" | chpasswd
 
 # ========= 6) Harden SSH: public-key only, no passwords, no root, custom port =========
-echo "[6/11] Hardening SSH (port ${SSH_PORT}, disable passwords, root login off)..."
+echo "[6/12] Hardening SSH (port ${SSH_PORT}, disable passwords, root login off)..."
 backup="${SSHD_CONFIG}.bak"; [[ -f "$backup" ]] || cp "$SSHD_CONFIG" "$backup"
 
 apply_sshd_conf() {
@@ -176,13 +180,13 @@ for f in /etc/ssh/sshd_config.d/*.conf; do
 done
 
 sshd -t
-echo "[6/11] Effective SSH options (sanity check):"
+echo "[6/12] Effective SSH options (sanity check):"
 sshd -T | egrep 'port|passwordauthentication|kbdinteractiveauthentication|challengeresponseauthentication|pubkeyauthentication|authenticationmethods|permitrootlogin' || true
 
 systemctl restart ssh
 
 # ========= 7) UFW: expose SSH & WG; do NOT open UI yet =========
-echo "[7/11] Configuring UFW (allow SSH ${SSH_PORT}/tcp and WG ${WG_PORT}/udp)..."
+echo "[7/12] Configuring UFW (allow SSH ${SSH_PORT}/tcp and WG ${WG_PORT}/udp)..."
 ufw allow "${SSH_PORT}/tcp" || true
 ufw allow "${WG_PORT}/udp" || true
 if ! ufw status | grep -q "Status: active"; then
@@ -191,7 +195,7 @@ fi
 ufw reload || true
 
 # ========= 8) Run awg-easy (publish UI) & TEMPORARILY open UI via UFW =========
-echo "[8/11] Running awg-easy container (publishing UI ${AWG_PORT}/tcp)..."
+echo "[8/12] Running awg-easy container (publishing UI ${AWG_PORT}/tcp)..."
 
 # Final check that Docker is running
 if ! docker info >/dev/null 2>&1; then
@@ -218,7 +222,7 @@ fi
 
 docker run -d \
   --name="$CONTAINER_NAME" \
-  -e LANG=ru \
+  -e LANG=en \
   -e WG_HOST="$WG_HOST" \
   -e PASSWORD_HASH="$PASSWORD_HASH" \
   -e WG_ENABLE_ONE_TIME_LINKS=true \
@@ -257,7 +261,7 @@ docker run -d \
   "$IMAGE_REF"
 
 # Wait for container to start and stabilize
-echo "[8/11] Waiting for container to start..."
+echo "[8/12] Waiting for container to start..."
 sleep 5
 
 # Check if container is running
@@ -281,17 +285,122 @@ ufw reload || true
 
 CONTAINER_IP="$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$CONTAINER_NAME" || true)"
 
+# ========= 9) Create first VPN client via API =========
+echo "[9/12] Creating first VPN client via API..."
+
+COOKIES_FILE="/tmp/awg-cookies.txt"
+API_URL="http://${CONTAINER_IP}:${AWG_PORT}"
+
+# Wait for API to be ready
+sleep 3
+
+# Authenticate
+echo "→ Authenticating..."
+AUTH_RESPONSE=$(curl -sS -X POST "${API_URL}/api/session" \
+  -H "Content-Type: application/json" \
+  -d "{\"password\":\"${AWG_PASS}\"}" \
+  -c "$COOKIES_FILE" 2>/dev/null || echo "")
+
+if ! echo "$AUTH_RESPONSE" | grep -q '"success":true'; then
+  echo "⚠ WARNING: API authentication failed"
+  echo "You will need to create VPN client manually via Web UI"
+else
+  echo "✓ Authenticated successfully"
+
+  # Create client
+  echo "→ Creating VPN client..."
+  CREATE_RESPONSE=$(curl -sS -X POST "${API_URL}/api/wireguard/client" \
+    -H "Content-Type: application/json" \
+    -d '{"name":"admin-device","expiredDate":""}' \
+    -b "$COOKIES_FILE" 2>/dev/null || echo "")
+
+  if echo "$CREATE_RESPONSE" | grep -q '"success":true'; then
+    echo "✓ Client created successfully"
+    sleep 2
+
+    # Get client ID
+    CLIENTS=$(curl -sS -b "$COOKIES_FILE" \
+      -H 'Accept: application/json' \
+      "${API_URL}/api/wireguard/client" 2>/dev/null || echo "[]")
+
+    CLIENT_ID=$(echo "$CLIENTS" | jq -r '.[0].id' 2>/dev/null || echo "")
+
+    if [[ -n "$CLIENT_ID" && "$CLIENT_ID" != "null" ]]; then
+      echo "✓ Client ID: $CLIENT_ID"
+
+      # Generate one-time link
+      echo "→ Generating one-time download link..."
+      GENERATE_RESPONSE=$(curl -sS -X POST \
+        "${API_URL}/api/wireguard/client/${CLIENT_ID}/generateOneTimeLink" \
+        -b "$COOKIES_FILE" 2>/dev/null || echo "")
+
+      if echo "$GENERATE_RESPONSE" | grep -q '"success":true'; then
+        echo "✓ One-time link generated"
+        sleep 2
+
+        # Get updated client info with one-time link
+        CLIENTS=$(curl -sS -b "$COOKIES_FILE" \
+          "${API_URL}/api/wireguard/client" 2>/dev/null || echo "[]")
+
+        ONE_TIME_LINK=$(echo "$CLIENTS" | jq -r '.[0].oneTimeLink' 2>/dev/null || echo "")
+
+        if [[ -n "$ONE_TIME_LINK" && "$ONE_TIME_LINK" != "null" ]]; then
+          DOWNLOAD_URL="http://${WG_HOST}:${AWG_PORT}/cnf/${ONE_TIME_LINK}"
+
+          # Function to display QR code in terminal
+          display_qr_code() {
+            local client_id="$1"
+            local url="${API_URL}/api/wireguard/client/${client_id}/qrcode.svg"
+            local tmp=$(mktemp --suffix=.png)
+
+            if curl -sS -b "$COOKIES_FILE" "$url" 2>/dev/null \
+              | rsvg-convert -f png -w 800 -h 800 > "$tmp" 2>/dev/null; then
+
+              if zbarimg --raw -q "$tmp" 2>/dev/null \
+                | qrencode -t ANSIUTF8 -l L -m 0 -s 1 2>/dev/null; then
+                rm -f "$tmp"
+                return 0
+              fi
+            fi
+
+            rm -f "$tmp"
+            echo "  (QR code generation failed - install missing tools or download config manually)"
+            return 1
+          }
+
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✓ FIRST VPN CLIENT CREATED!"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "Download config (ONE-TIME LINK - expires after download):"
+          echo "  $DOWNLOAD_URL"
+          echo ""
+          echo "QR Code (scan with WireGuard mobile app):"
+          display_qr_code "$CLIENT_ID"
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+        fi
+      fi
+    fi
+  fi
+fi
+
+# Clean up cookies
+rm -f "$COOKIES_FILE"
+
 echo
 echo ">>> TEMPORARY Web UI access is OPEN to the Internet."
-echo "    Please open this URL NOW and create at least one VPN client:"
+echo "    You can also access Web UI at:"
 echo "    URL:  http://${WG_HOST}:${AWG_PORT}"
 echo "    User: admin"
 echo "    Pass: ${AWG_PASS}"
 echo
-read -r -p "When DONE creating a VPN client, press ENTER to lock the Web UI to VPN-only... " _
+read -r -p "Press ENTER to lock the Web UI to VPN-only access... " _
 
-# ========= 9) LOCK Web UI to VPN-only: UFW + DOCKER-USER chain =========
-echo "[9/11] Locking the Web UI to VPN-only (${VPN_SUBNET})..."
+# ========= 10) LOCK Web UI to VPN-only: UFW + DOCKER-USER chain =========
+echo "[10/12] Locking the Web UI to VPN-only (${VPN_SUBNET})..."
 
 # UFW: allow from VPN subnet, deny everyone else
 ufw delete allow "${AWG_PORT}/tcp" >/dev/null 2>&1 || true
@@ -305,6 +414,11 @@ apply_docker_user_lock() {
   # Ensure chain exists
   iptables -N DOCKER-USER 2>/dev/null || true
 
+  # Remove Docker's default RETURN rule (critical for blocking to work)
+  while iptables -C DOCKER-USER -j RETURN 2>/dev/null; do
+    iptables -D DOCKER-USER -j RETURN
+  done
+
   # Remove existing rules for this port to avoid duplicates
   while iptables -C DOCKER-USER -p tcp --dport "$port" -j DROP 2>/dev/null; do
     iptables -D DOCKER-USER -p tcp --dport "$port" -j DROP
@@ -316,6 +430,9 @@ apply_docker_user_lock() {
   # Add allow-then-drop (order matters)
   iptables -I DOCKER-USER -p tcp --dport "$port" -s "$subnet" -j ACCEPT
   iptables -A DOCKER-USER -p tcp --dport "$port" -j DROP
+
+  # Re-add RETURN at the end for other Docker traffic
+  iptables -A DOCKER-USER -j RETURN
 }
 
 apply_docker_user_lock "${AWG_PORT}" "${VPN_SUBNET}"
@@ -327,6 +444,12 @@ set -e
 PORT=${AWG_PORT}
 SUBNET="${VPN_SUBNET}"
 iptables -N DOCKER-USER 2>/dev/null || true
+
+# Remove Docker's default RETURN rule
+while iptables -C DOCKER-USER -j RETURN 2>/dev/null; do
+  iptables -D DOCKER-USER -j RETURN
+done
+
 # Clean old rules for the port
 while iptables -C DOCKER-USER -p tcp --dport "\$PORT" -j DROP 2>/dev/null; do
   iptables -D DOCKER-USER -p tcp --dport "\$PORT" -j DROP
@@ -334,9 +457,13 @@ done
 while iptables -C DOCKER-USER -p tcp --dport "\$PORT" -s "\$SUBNET" -j ACCEPT 2>/dev/null; do
   iptables -D DOCKER-USER -p tcp --dport "\$PORT" -s "\$SUBNET" -j ACCEPT
 done
+
 # Allow VPN subnet, drop others
 iptables -I DOCKER-USER -p tcp --dport "\$PORT" -s "\$SUBNET" -j ACCEPT
 iptables -A DOCKER-USER -p tcp --dport "\$PORT" -j DROP
+
+# Re-add RETURN at the end for other Docker traffic
+iptables -A DOCKER-USER -j RETURN
 EOF
 chmod +x /usr/local/sbin/lock-awg-ui.sh
 
@@ -358,10 +485,10 @@ EOF
 systemctl daemon-reload
 systemctl enable --now lock-awg-ui.service
 
-echo "[9/11] DOCKER-USER rules applied and persistence enabled."
-echo "       You can verify with:  iptables -S DOCKER-USER"
+echo "[10/12] DOCKER-USER rules applied and persistence enabled."
+echo "        You can verify with:  iptables -S DOCKER-USER"
 
-# ========= 10) Summary =========
+# ========= 11) Summary =========
 echo
 echo "==================== SUMMARY ===================="
 echo " User:                    $NEWUSER"
@@ -384,7 +511,7 @@ echo " PASSWORD_HASH (bcrypt):  ${PASSWORD_HASH}"
 echo " DOCKER-USER persisted:   lock-awg-ui.service (enabled)"
 echo "================================================="
 
-# ========= 11) Reboot prompt =========
+# ========= 12) Reboot prompt =========
 read -n 1 -s -r -p "Press any key to reboot the host..." _
 echo
 reboot
