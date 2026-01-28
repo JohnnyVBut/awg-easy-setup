@@ -221,6 +221,9 @@ docker run -d \
   -e LANG=en \
   -e WG_HOST="$WG_HOST" \
   -e PASSWORD_HASH="$PASSWORD_HASH" \
+  -e WG_ENABLE_ONE_TIME_LINKS=true \
+  -e UI_CHART_TYPE=1 \
+  -e UI_TRAFFIC_STATS=true \
   -e PORT="$AWG_PORT" \
   -e WG_PORT="$WG_PORT" \
   -e WG_DEFAULT_DNS=1.1.1.1,8.8.8.8 \
