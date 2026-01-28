@@ -49,35 +49,49 @@ apt update
 apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 apt install -y openssh-server ufw python3 python3-pip git jq vim htop unzip zip apache2-utils dnsutils
 
-# Fix for Ubuntu 24: Enable docker.socket first
+# Enable services
 systemctl enable docker.socket
-systemctl start docker.socket
 systemctl enable docker
-systemctl start docker
+systemctl enable ssh
 
-# Check if Docker started successfully
-sleep 2
-if ! systemctl is-active --quiet docker; then
-  echo "ERROR: Docker failed to start. Checking logs..."
-  systemctl status docker
-  journalctl -xeu docker.service --no-pager -n 50
-  echo ""
-  echo "Attempting to fix..."
+# Start Docker with retry logic (Ubuntu 24 needs this)
+echo "[2/11] Starting Docker daemon..."
+MAX_ATTEMPTS=3
+ATTEMPT=0
 
-  # Restart socket and service
-  systemctl restart docker.socket
-  systemctl restart docker
+while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+  ATTEMPT=$((ATTEMPT + 1))
+  echo "→ Starting Docker (attempt $ATTEMPT/$MAX_ATTEMPTS)..."
+
+  # Reset failed state from previous attempts
+  systemctl reset-failed docker.socket 2>/dev/null || true
+  systemctl reset-failed docker 2>/dev/null || true
+
+  systemctl start docker.socket || true
   sleep 3
+  systemctl start docker || true
+  sleep 5
 
-  if ! systemctl is-active --quiet docker; then
-    echo "ERROR: Docker still not running. Manual intervention required."
-    echo "Please run: systemctl restart docker.socket && systemctl restart docker"
-    exit 1
+  if systemctl is-active --quiet docker; then
+    echo "✓ Docker started successfully"
+    break
   fi
+
+  echo "⚠ Docker failed to start, will retry..."
+done
+
+if ! systemctl is-active --quiet docker; then
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "⚠ WARNING: Docker failed to start after $MAX_ATTEMPTS attempts"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  journalctl -xeu docker.service --no-pager -n 15
+  echo ""
+  echo "Will retry before running container in section 8..."
+  echo ""
 fi
 
-echo "Docker is running successfully"
-systemctl enable --now ssh
+systemctl start ssh
 
 # ========= 3) Create sudo user (10s prompt) =========
 echo "[3/11] Creating a sudo user (you have 10 seconds to type a name)..."
@@ -178,6 +192,14 @@ ufw reload || true
 
 # ========= 8) Run awg-easy (publish UI) & TEMPORARILY open UI via UFW =========
 echo "[8/11] Running awg-easy container (publishing UI ${AWG_PORT}/tcp)..."
+
+# Final check that Docker is running
+if ! docker info >/dev/null 2>&1; then
+  echo "ERROR: Docker is still not running. Please investigate:"
+  journalctl -xeu docker.service --no-pager -n 20
+  exit 1
+fi
+
 AWG_PASS="$(openssl rand -base64 24 | tr -d '\n')"
 PASSWORD_HASH="$(htpasswd -nbB admin "$AWG_PASS" | cut -d: -f2)"  # bcrypt (cost=5)
 
