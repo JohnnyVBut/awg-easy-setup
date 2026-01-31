@@ -99,7 +99,7 @@ QR Code (scan with WireGuard mobile app):
 ```
 
 **Actions:**
-1. **Scan the QR code** with WireGuard mobile app, OR
+1. **Scan the QR code** with AmneziaWG mobile app, OR
 2. **Click the one-time link** to download config file
 3. **⚠️ Save the link immediately** - it expires after first download!
 
