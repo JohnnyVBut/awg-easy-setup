@@ -285,7 +285,8 @@ docker run -d \
   -e H2=1824677785-1918284606 \
   -e H3=2058490965-2098228430 \
   -e H4=2114920036-2134209753 \
-  -e I1='<b 0x02020000000239000a0c8c00ffffff000000000000000004000272480a473400ffffff00000000000000000b00022c830ad81000ffffff00000000000000000100022ff80a6f7700ffffff00000000000000000900020d960a65d600ffffff0000000000000000040002e5fe0a8e0300ffffff00000000000000000d000251be>' \  -e I2= \
+  -e I1='<b 0x02020000000239000a0c8c00ffffff000000000000000004000272480a473400ffffff00000000000000000b00022c830ad81000ffffff00000000000000000100022ff80a6f7700ffffff00000000000000000900020d960a65d600ffffff0000000000000000040002e5fe0a8e0300ffffff00000000000000000d000251be>' \
+  -e I2= \
   -e I3= \
   -e I4= \
   -e I5= \
@@ -329,27 +330,6 @@ CONTAINER_IP="$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddre
 
 # ========= 9) Create first VPN client via API =========
 echo "[9/12] Creating first VPN client via API..."
-
-# Define function FIRST (before any conditions)
-#display_qr_code() {
-#  local client_id="$1"
-#  local url="${API_URL}/api/wireguard/client/${client_id}/qrcode.svg"
-#  local tmp=$(mktemp --suffix=.png)
-#
-#  if curl -sS -b "$COOKIES_FILE" "$url" 2>/dev/null \
-#    | rsvg-convert -f png -w 800 -h 800 > "$tmp" 2>/dev/null; then
-#
-#    if zbarimg --raw -q "$tmp" 2>/dev/null \
-#      | qrencode -t ANSIUTF8 -l L -m 0 -s 1 2>/dev/null; then
-#      rm -f "$tmp"
-#      return 0
-#    fi
-#  fi
-#
-#  rm -f "$tmp"
-#  echo "  (QR code generation failed - install missing tools or download config manually)"
-#  return 1
-#}
 COOKIES_FILE="/tmp/awg-cookies.txt"
 API_URL="http://${CONTAINER_IP}:${AWG_PORT}"
 
