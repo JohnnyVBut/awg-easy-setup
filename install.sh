@@ -331,6 +331,26 @@ CONTAINER_IP="$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddre
 # ========= 9) Create first VPN client via API =========
 echo "[9/12] Creating first VPN client via API..."
 
+# Define function FIRST (before any conditions)
+display_qr_code() {
+  local client_id="$1"
+  local url="${API_URL}/api/wireguard/client/${client_id}/qrcode.svg"
+  local tmp=$(mktemp --suffix=.png)
+
+  if curl -sS -b "$COOKIES_FILE" "$url" 2>/dev/null \
+    | rsvg-convert -f png -w 800 -h 800 > "$tmp" 2>/dev/null; then
+
+    if zbarimg --raw -q "$tmp" 2>/dev/null \
+      | qrencode -t ANSIUTF8 -l L -m 0 -s 1 2>/dev/null; then
+      rm -f "$tmp"
+      return 0
+    fi
+  fi
+
+  rm -f "$tmp"
+  echo "  (QR code generation failed - install missing tools or download config manually)"
+  return 1
+}
 COOKIES_FILE="/tmp/awg-cookies.txt"
 API_URL="http://${CONTAINER_IP}:${AWG_PORT}"
 
@@ -390,26 +410,26 @@ else
         if [[ -n "$ONE_TIME_LINK" && "$ONE_TIME_LINK" != "null" ]]; then
           DOWNLOAD_URL="http://${WG_HOST}:${AWG_PORT}/cnf/${ONE_TIME_LINK}"
 
-          # Function to display QR code in terminal
-          display_qr_code() {
-            local client_id="$1"
-            local url="${API_URL}/api/wireguard/client/${client_id}/qrcode.svg"
-            local tmp=$(mktemp --suffix=.png)
-
-            if curl -sS -b "$COOKIES_FILE" "$url" 2>/dev/null \
-              | rsvg-convert -f png -w 800 -h 800 > "$tmp" 2>/dev/null; then
-
-              if zbarimg --raw -q "$tmp" 2>/dev/null \
-                | qrencode -t ANSIUTF8 -l L -m 0 -s 1 2>/dev/null; then
-                rm -f "$tmp"
-                return 0
-              fi
-            fi
-
-            rm -f "$tmp"
-            echo "  (QR code generation failed - install missing tools or download config manually)"
-            return 1
-          }
+#          # Function to display QR code in terminal
+#          display_qr_code() {
+#            local client_id="$1"
+#            local url="${API_URL}/api/wireguard/client/${client_id}/qrcode.svg"
+#            local tmp=$(mktemp --suffix=.png)
+#
+#            if curl -sS -b "$COOKIES_FILE" "$url" 2>/dev/null \
+#              | rsvg-convert -f png -w 800 -h 800 > "$tmp" 2>/dev/null; then
+#
+#              if zbarimg --raw -q "$tmp" 2>/dev/null \
+#                | qrencode -t ANSIUTF8 -l L -m 0 -s 1 2>/dev/null; then
+#                rm -f "$tmp"
+#                return 0
+#              fi
+#            fi
+#
+#            rm -f "$tmp"
+#            echo "  (QR code generation failed - install missing tools or download config manually)"
+#            return 1
+#          }
 
           echo ""
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
