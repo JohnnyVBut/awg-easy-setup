@@ -272,7 +272,7 @@ docker run -d \
   -e UI_TRAFFIC_STATS=true \
   -e PORT="$AWG_PORT" \
   -e WG_PORT="$WG_PORT" \
-  -e WG_DEFAULT_SUBNET="$WG_DEFAULT_SUBNET" \
+  -e WG_DEFAULT_ADDRESS="$WG_DEFAULT_ADDRESS" \
   -e WG_DEFAULT_DNS=1.1.1.1,8.8.8.8 \
   -e JC=6 \
   -e JMIN=10 \
