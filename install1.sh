@@ -22,6 +22,23 @@ command -v apt >/dev/null || { echo "This script expects apt (Ubuntu/Debian)."; 
 # ========= 1) Update & upgrade =========
 echo "[1/12] Updating packages..."
 export DEBIAN_FRONTEND=noninteractive
+
+# Disable IPv6 system-wide (not needed for VPN server)
+if ! grep -q "net.ipv6.conf.all.disable_ipv6" /etc/sysctl.conf 2>/dev/null; then
+  echo "→ Disabling IPv6..."
+  cat >> /etc/sysctl.conf <<'EOF'
+
+# Disable IPv6
+net.ipv6.conf.all.disable_ipv6 = 1
+net.ipv6.conf.default.disable_ipv6 = 1
+net.ipv6.conf.lo.disable_ipv6 = 1
+EOF
+  sysctl -p >/dev/null 2>&1 || true
+fi
+
+# Force APT to use IPv4 only
+echo 'Acquire::ForceIPv4 "true";' > /etc/apt/apt.conf.d/99force-ipv4
+
 apt update
 apt -y upgrade
 
