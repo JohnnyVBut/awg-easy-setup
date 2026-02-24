@@ -11,20 +11,20 @@
 ### Рекомендуется: Установка одной командой (скачивание → запуск)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/install.sh -o /tmp/awg-setup.sh && sudo bash /tmp/awg-setup.sh
+curl -fsSL https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/install1.sh -o /tmp/awg-setup.sh && sudo bash /tmp/awg-setup.sh
 ```
 
 **Или с wget:**
 
 ```bash
-wget -qO /tmp/awg-setup.sh https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/install.sh && sudo bash /tmp/awg-setup.sh
+wget -qO /tmp/awg-setup.sh https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/install1.sh && sudo bash /tmp/awg-setup.sh
 ```
 
 ### Альтернатива: Ручная проверка
 
 ```bash
 # Скачать скрипт
-curl -fsSL https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/install.sh -o /tmp/awg-setup.sh
+curl -fsSL https://raw.githubusercontent.com/JohnnyVBut/awg-easy-setup/main/install1.sh -o /tmp/awg-setup.sh
 
 # Проверить синтаксис
 bash -n /tmp/awg-setup.sh
