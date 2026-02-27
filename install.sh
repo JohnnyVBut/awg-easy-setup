@@ -5,7 +5,7 @@ set -euo pipefail
 SSH_PORT=9722
 SSHD_CONFIG="/etc/ssh/sshd_config"
 DEFAULT_USER="admino"
-WG_PORT=824                 # WireGuard UDP port (exposed)
+WG_PORT=443                 # WireGuard UDP port (exposed)
 AWG_PORT=9999                 # awg-easy Web UI port
 VPN_SUBNET="10.72.255.0/24"      # Web UI allowed only from this subnet after bootstrap
 WG_DEFAULT_ADDRESS="10.72.255.x"
