@@ -305,7 +305,7 @@ docker run -d \
 
 # Wait for container to start and stabilize
 echo "[8/12] Waiting for container to start..."
-sleep 5
+sleep 15
 
 # Check if container is running
 if ! docker ps | grep -q "$CONTAINER_NAME"; then
