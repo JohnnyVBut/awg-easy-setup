@@ -319,7 +319,7 @@ if ! docker ps | grep -q "$CONTAINER_NAME"; then
   echo "  apt install -y linux-headers-\$(uname -r) build-essential git"
   echo "  cd /tmp && git clone https://github.com/amnezia-vpn/amneziawg-linux-kernel-module.git"
   echo "  cd amneziawg-linux-kernel-module/src && make && make install && modprobe amneziawg"
-  exit 1
+  #exit 1
 fi
 
 # TEMPORARILY open UI via UFW (note: Docker may bypass UFW; we'll enforce DOCKER-USER later)
