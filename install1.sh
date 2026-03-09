@@ -5,7 +5,7 @@ set -euo pipefail
 SSH_PORT=9722
 SSHD_CONFIG="/etc/ssh/sshd_config"
 DEFAULT_USER="admino"
-WG_PORT=520                 # WireGuard UDP port (exposed)
+WG_PORT=433                 # WireGuard UDP port (exposed)
 AWG_PORT=8888                 # awg-easy Web UI port
 VPN_SUBNET="10.72.254.0/24"      # Web UI allowed only from this subnet after bootstrap
 WG_DEFAULT_ADDRESS="10.72.254.x"
@@ -368,22 +368,22 @@ docker run -d \
   -e WG_PORT="$WG_PORT" \
   -e WG_DEFAULT_ADDRESS="$WG_DEFAULT_ADDRESS" \
   -e WG_DEFAULT_DNS=1.1.1.1,8.8.8.8 \
-  -e JC=6 \
-  -e JMIN=10 \
-  -e JMAX=50 \
-  -e S1=64 \
-  -e S2=67 \
-  -e S3=17 \
-  -e S4=4 \
-  -e H1=221138202-537563446 \
-  -e H2=1824677785-1918284606 \
-  -e H3=2058490965-2098228430 \
-  -e H4=2114920036-2134209753 \
-  -e I1='<r 2> <b 0x02020000000239000a0c8c00ffffff000000000000000004000272480a473400ffffff00000000000000000b00022c830ad81000ffffff00000000000000000100022ff80a6f7700ffffff00000000000000000900020d960a65d600ffffff0000000000000000040002e5fe0a8e0300ffffff00000000000000000d000251be>' \
-  -e I2= \
-  -e I3= \
-  -e I4= \
-  -e I5= \
+  -e JC=5 \
+  -e JMIN=64 \
+  -e JMAX=556 \
+  -e S1=20 \
+  -e S2=24 \
+  -e S3=21 \
+  -e S4=12 \
+  -e H1=100445838-100448046 \
+  -e H2=1200217663-1200246765 \
+  -e H3=2400439522-2400462550 \
+  -e H4=3600421190-3600463094 \
+  -e I1='<b 0x16fefd00402cb332252d88010e017fe229e24b8afefd0000ae8d8a1ee2c353d4c689bef8732ec919289307a544e8b96bffcdf00e29870ffdc0791c6a><rc 21><t><r 52>' \
+  -e I2='<b 0x16fefd00dabbc0d03c93d9009a01cf5a0c743e7ffefd00004b436594cd822c7fb171edff2da119a03c88e17812c6574d5bce020bedde81b9929bef61><rc 28><t><r 106>' \
+  -e I3='<b 0x16fefd00ed8697a85d549100d0019b1720f47d85fefd0000c8b141ab32e361e55a981807d7ec6a19ce272880351101097b9275a0c5cd8967c11976e8><rc 19><t><r 100>' \
+  -e I4='<b 0x16fefd00851cb68819de67007c01202589b2aa18fefd0000e6275e6ce33a0d3bfbe139b68f076ad0296ea622d834eee5ff2f87ca586d87132bc37711><rc 20><t><r 64>' \
+  -e I5='<b 0x16fefd0098ebcfd976f87f00d301e9cdae628fecfefd0000681ab1beb781787249c5c5c8e771e8fff5a38411a87f604b5a37673f11f0e801cfc0cd38><rc 18><t><r 40>' \
   -e ITIME=0 \
   -v "$HOST_CONF_DIR:/etc/wireguard" \
   -v "$HOST_CONF_DIR:/etc/amnezia/amneziawg" \
